@@ -53,7 +53,7 @@ export function Sidebar({ workspaceSlug }: SidebarProps) {
           </div>
         </div>
         <button
-          onClick={logout}
+          onClick={async () => { await logout() }}
           className="w-full text-left px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
         >
           Выйти
