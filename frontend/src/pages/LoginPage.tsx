@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { useAuth } from '@/context/AuthContext'
 import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/stores/authStore'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const { signIn, signUp } = useAuth()
   const { setUser } = useAuthStore()
   const [isRegister, setIsRegister] = useState(false)
   const [error, setError] = useState('')
@@ -24,18 +26,27 @@ export function LoginPage() {
     setLoading(true)
 
     try {
-      const response = isRegister
-        ? await authApi.register(form)
-        : await authApi.login({ email: form.email, password: form.password })
+      const { error: authError, data } = isRegister
+        ? await signUp(form.email, form.password, form.first_name, form.last_name)
+        : await signIn(form.email, form.password)
 
-      localStorage.setItem('access_token', response.data.access_token)
-      localStorage.setItem('refresh_token', response.data.refresh_token)
+      if (authError) {
+        throw new Error(authError.message)
+      }
 
+      if (!data.session) {
+        // Email confirmation may be required.
+        setError('Подтвердите email, если требуется, или проверьте данные')
+        setLoading(false)
+        return
+      }
+
+      // Sync/create the local user/workspace via the backend.
       const me = await authApi.me()
       setUser(me.data)
       navigate('/')
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Ошибка авторизации')
+      setError(err.message || err.response?.data?.detail || 'Ошибка авторизации')
     } finally {
       setLoading(false)
     }

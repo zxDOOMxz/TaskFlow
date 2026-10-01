@@ -22,7 +22,13 @@ function WorkspaceLayout() {
     if (!session) return
     if (workspace?.slug === workspaceSlug) return
     // TODO: load workspace via API once backend migration is complete
-    setWorkspace({ id: workspaceSlug!, slug: workspaceSlug!, name: workspaceSlug! })
+    setWorkspace({
+      id: workspaceSlug!,
+      slug: workspaceSlug!,
+      name: workspaceSlug!,
+      owner_id: session.user.id,
+      created_at: new Date().toISOString(),
+    })
   }, [workspaceSlug, session, workspace, setWorkspace, navigate])
 
   if (!session) return <Navigate to="/login" />
