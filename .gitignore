@@ -1,0 +1,27 @@
+# Global
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Backend
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.env
+backend/.env.local
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# SSH keys (just in case)
+*.pem
+id_ed25519
+id_ed25519.pub
+id_rsa
+id_rsa.pub
