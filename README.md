@@ -95,21 +95,32 @@ npm install
 npm run dev
 ```
 
+## Архитектура (гибридная)
+
+```
+Frontend (React + Supabase JS)
+    ├── Supabase Auth — регистрация/вход/сессия
+    ├── Supabase Storage — файлы (в разработке)
+    ├── Supabase Realtime — чаты/live-обновления (в разработке)
+    └── FastAPI Backend — сложная логика (mentions, notifications, поиск)
+            └── Supabase PostgreSQL — данные
+```
+
+Авторизация происходит через **Supabase Auth**. Frontend получает JWT-токен и передаёт его в FastAPI-бэкенд в заголовке `Authorization: Bearer <token>`. Бэкенд верифицирует токен через Supabase JWKS.
+
 ## Интеграции
 
-### Supabase PostgreSQL (бесплатно)
+### Supabase Auth + PostgreSQL
 
 1. Создай проект на [https://supabase.com](https://supabase.com).
-2. В настройках Database возьми строку подключения (Connection string → URI).
-3. Подставь пароль и добавь `?sslmode=require`:
-   ```
-   DATABASE_URL=postgresql+psycopg2://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres?sslmode=require
-   ```
-4. Примени миграции:
-   ```bash
-   cd backend
-   alembic upgrade head
-   ```
+2. В **Project Settings → API** скопируй:
+   - Project URL
+   - `anon` / `publishable` ключ (для фронтенда)
+   - `service_role` / `secret` ключ (для бэкенда)
+3. В **Authentication → URL Configuration** добавь:
+   - Site URL: `http://localhost:5173`
+   - Redirect URLs: `http://localhost:5173/**`
+4. Заполни `.env` файлы (см. примеры ниже).
 
 ### Web3Forms
 
@@ -120,6 +131,29 @@ npm run dev
    WEB3FORMS_ACCESS_KEY=your-access-key
    ```
 3. Используй эндпоинт `POST /api/v1/contact` для отправки форм.
+
+## Переменные окружения
+
+### Backend (`backend/.env`)
+
+```env
+DATABASE_URL=postgresql+psycopg2://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres?sslmode=require
+SECRET_KEY=any-random-string
+
+SUPABASE_ENABLED=true
+SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+SUPABASE_SECRET_KEY=your-service-role-key
+SUPABASE_PUBLISHABLE_KEY=your-anon-key
+SUPABASE_JWKS_URL=https://YOUR_PROJECT_REF.supabase.co/auth/v1/.well-known/jwks.json
+```
+
+### Frontend (`frontend/.env`)
+
+```env
+VITE_API_URL=/api/v1
+VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
 
 ## Основные API эндпоинты
 
