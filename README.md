@@ -155,6 +155,41 @@ VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
+## Деплой на свой сервер (VPS)
+
+### Подготовка сервера
+
+1. Установи Docker и Docker Compose.
+2. Склонируй репозиторий:
+   ```bash
+   git clone https://github.com/zxDOOMxz/TaskFlow.git /opt/taskflow
+   cd /opt/taskflow
+   ```
+3. Создай файл `.env` по примеру `.env.example` и заполни свои значения Supabase.
+
+### Запуск
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Фронтенд будет доступен на `http://SERVER_IP`, бэкенд API на `http://SERVER_IP:8000`.
+
+### Автодеплой через GitHub Actions
+
+1. В настройках репозитория (Settings → Secrets and variables → Actions):
+   - **Secrets** → `DEPLOY_SSH_KEY`: приватный SSH-ключ сервера.
+   - **Variables** → `DEPLOY_HOST`: IP или домен сервера.
+   - **Variables** → `DEPLOY_USER`: имя пользователя на сервере (например, `root` или `ubuntu`).
+   - **Variables** → `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+2. На сервере добавь публичный ключ в `~/.ssh/authorized_keys`.
+3. При каждом пуше в `master` GitHub Actions соберёт образы и выполнит деплой.
+
+### Альтернативные хостинги
+
+- **Фронтенд**: Vercel, Netlify, GitHub Pages, Cloudflare Pages.
+- **Бэкенд**: Render, Railway, Fly.io, любой VPS с Docker.
+
 ## Основные API эндпоинты
 
 | Метод | Эндпоинт | Описание |
