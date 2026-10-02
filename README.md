@@ -254,6 +254,22 @@ docker compose -f docker-compose.prod.yml up -d --build
 - **Фронтенд**: Vercel, Netlify, GitHub Pages, Cloudflare Pages.
 - **Бэкенд**: Render, Railway, Fly.io, Koyeb.
 
+## Обновление CORS в Render
+
+После смены домена фронтенда обнови `CORS_ORIGINS` в настройках бэкенда на Render:
+
+1. Открой [dashboard.render.com](https://dashboard.render.com) → выбери сервис `TaskFlow`.
+2. Слева нажми **Environment**.
+3. Найди переменную `CORS_ORIGINS`.
+4. Измени значение на новый домен (домены разделяй запятыми, без пробелов):
+   ```
+   https://itaskflow.ru,https://www.itaskflow.ru
+   ```
+5. Нажми **Save Changes**.
+6. Перейди в **Deploys** и нажми **Manual Deploy → Deploy latest commit**.
+
+Без этого браузер будет блокировать запросы с нового домена к бэкенду.
+
 ## Основные API эндпоинты
 
 | Метод | Эндпоинт | Описание |
