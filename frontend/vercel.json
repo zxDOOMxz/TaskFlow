@@ -4,8 +4,8 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://taskflow-api.onrender.com/api/$1" },
-    { "source": "/ws/(.*)", "destination": "wss://taskflow-api.onrender.com/ws/$1" }
+    { "source": "/api/(.*)", "destination": "https://taskflow-zcib.onrender.com/api/$1" },
+    { "source": "/ws/(.*)", "destination": "wss://taskflow-zcib.onrender.com/ws/$1" }
   ],
   "headers": [
     {
