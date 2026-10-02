@@ -213,10 +213,46 @@ docker compose -f docker-compose.prod.yml up -d --build
 2. На сервере добавь публичный ключ в `~/.ssh/authorized_keys`.
 3. При каждом пуше в `master` GitHub Actions соберёт образы и выполнит деплой.
 
+### Бесплатный хостинг без сервера (Vercel + Render)
+
+Если у тебя нет VPS, можно развернуть всё бесплатно:
+
+#### 1. Бэкенд на Render
+
+1. Зарегистрируйся на https://render.com (через GitHub).
+2. New → Blueprint → выбери репозиторий `zxDOOMxz/TaskFlow`.
+3. Render найдёт `render.yaml` и создаст сервис `taskflow-api`.
+4. В настройках сервиса добавь переменные окружения:
+   - `DATABASE_URL` — строка подключения Supabase PostgreSQL.
+   - `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_JWKS_URL`.
+   - `CORS_ORIGINS` — `https://task-flow.work.gd,https://www.task-flow.work.gd`.
+5. Деплой произойдёт автоматически. Запомни URL бэкенда, например `https://taskflow-api.onrender.com`.
+
+#### 2. Фронтенд на Vercel
+
+1. Зарегистрируйся на https://vercel.com (через GitHub).
+2. Add New Project → импортируй `zxDOOMxz/TaskFlow`.
+3. Root Directory: `frontend`.
+4. Environment Variables:
+   - `VITE_API_URL=/api/v1`
+   - `VITE_WS_HOST=taskflow-api.onrender.com` (твой URL Render)
+   - `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY`.
+5. В `frontend/vercel.json` замени `taskflow-api.onrender.com` на реальный URL бэкенда.
+6. Деплой.
+
+#### 3. Подключение домена
+
+1. В Vercel → Project Settings → Domains → добавь `task-flow.work.gd`.
+2. Vercel покажет DNS-записи (обычно A-запись или CNAME).
+3. Добавь эти записи в панели freedomain.one.
+4. Жди обновления DNS (до 24 часов, обычно быстрее).
+
+> Бесплатный Render «засыпает» при неактивности (~15 мин), поэтому первый запрос после паузы может занять 30–60 секунд.
+
 ### Альтернативные хостинги
 
 - **Фронтенд**: Vercel, Netlify, GitHub Pages, Cloudflare Pages.
-- **Бэкенд**: Render, Railway, Fly.io, любой VPS с Docker.
+- **Бэкенд**: Render, Railway, Fly.io, Koyeb.
 
 ## Основные API эндпоинты
 
