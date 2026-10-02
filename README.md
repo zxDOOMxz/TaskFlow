@@ -167,13 +167,41 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
    ```
 3. Создай файл `.env` по примеру `.env.example` и заполни свои значения Supabase.
 
+### DNS-записи
+
+Для домена `task-flow.work.gd` (или твоего домена) создай в панели регистратора/управления DNS:
+
+| Тип | Имя | Значение | TTL |
+|-----|-----|----------|-----|
+| A | `@` | IP-адрес твоего сервера | 300/600 |
+| A | `www` | IP-адрес твоего сервера | 300/600 |
+
+Если используешь поддомен (например, `app.task-flow.work.gd`), создай A-запись для `app` вместо `@`.
+
+### SSL-сертификат (Let's Encrypt)
+
+Перед первым запуском получи SSL-сертификат:
+
+```bash
+cd /opt/taskflow
+chmod +x init-ssl.sh
+./init-ssl.sh
+```
+
+Скрипт использует Certbot в standalone-режиме (должен быть свободен порт 80).
+
 ### Запуск
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-Фронтенд будет доступен на `http://SERVER_IP`, бэкенд API на `http://SERVER_IP:8000`.
+После запуска:
+- Сайт: `https://task-flow.work.gd`
+- API: `https://task-flow.work.gd/api/v1/`
+- WebSocket: `wss://task-flow.work.gd/ws/`
+
+Бэкенд на порту `8000` больше не открыт наружу — все запросы идут через nginx.
 
 ### Автодеплой через GitHub Actions
 

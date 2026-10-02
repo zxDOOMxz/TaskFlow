@@ -18,8 +18,9 @@ services:
       - SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}
       - SUPABASE_JWKS_URL=${SUPABASE_JWKS_URL}
       - CORS_ORIGINS=${CORS_ORIGINS}
-    ports:
-      - "8000:8000"
+    # Backend доступен только внутри Docker-сети через nginx
+    expose:
+      - "8000"
     command: >
       sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     healthcheck:
@@ -28,6 +29,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - taskflow
 
   frontend:
     build:
@@ -41,5 +44,25 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt:ro
+      - ./data/certbot/www:/var/www/certbot:ro
     depends_on:
       - backend
+    networks:
+      - taskflow
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: taskflow-certbot
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - taskflow
+
+networks:
+  taskflow:
+    driver: bridge
