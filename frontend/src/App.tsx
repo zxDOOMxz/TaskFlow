@@ -127,6 +127,7 @@ function RootRedirect() {
 }
 
 function App() {
+  console.log('[APP] App rendering')
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />

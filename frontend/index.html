@@ -8,10 +8,19 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      window.addEventListener('error', function (e) {
+        console.error('[HTML ERROR]', e.message, e.filename, e.lineno, e.colno, e.error);
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        console.error('[HTML UNHANDLED REJECTION]', e.reason);
+      });
+      console.log('[HTML] index.html parsed, waiting for JS module...');
+    </script>
   </head>
   <body>
     <div id="root">
-      <div id="boot-fallback" style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:Inter,system-ui,sans-serif;background:#f8fafc;color:#334155;">
+      <div id="boot-fallback" style="min-height:100vh;display:flex;align-items:center;justify:center;font-family:Inter,system-ui,sans-serif;background:#f8fafc;color:#334155;">
         <div style="text-align:center;">
           <div style="width:48px;height:48px;border:4px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1rem;"></div>
           <p style="margin:0;font-size:1rem;">Загрузка TaskFlow…</p>
