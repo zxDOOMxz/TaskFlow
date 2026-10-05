@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import ProtectedRoute from '@/components/ProtectedRoute'
@@ -11,27 +11,64 @@ import { ProjectBoardPage } from '@/pages/ProjectBoardPage'
 import { WikiPage } from '@/pages/WikiPage'
 import { ChatPage } from '@/pages/ChatPage'
 import { FilesPage } from '@/pages/FilesPage'
+import { workspaceApi } from '@/api/workspaces'
 
 function WorkspaceLayout() {
   const { workspaceSlug } = useParams()
   const { session } = useAuth()
   const { workspace, setWorkspace } = useAuthStore()
-  const navigate = useNavigate()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!session) return
-    if (workspace?.slug === workspaceSlug) return
-    // TODO: load workspace via API once backend migration is complete
-    setWorkspace({
-      id: workspaceSlug!,
-      slug: workspaceSlug!,
-      name: workspaceSlug!,
-      owner_id: session.user.id,
-      created_at: new Date().toISOString(),
-    })
-  }, [workspaceSlug, session, workspace, setWorkspace, navigate])
+    let active = true
+    if (!workspaceSlug || !session) {
+      setLoading(false)
+      return
+    }
+    if (workspace?.slug === workspaceSlug) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    setError('')
+    workspaceApi
+      .get(workspaceSlug)
+      .then(({ data }) => {
+        if (!active) return
+        setWorkspace(data)
+      })
+      .catch((err) => {
+        if (!active) return
+        console.error('Failed to load workspace:', err)
+        setError('Рабочее пространство не найдено')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [workspaceSlug, session, workspace, setWorkspace])
 
   if (!session) return <Navigate to="/login" />
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    )
+  }
+  if (error || !workspace) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <p className="text-red-600 mb-2">{error || 'Рабочее пространство не загружено'}</p>
+          <a href="/" className="text-primary-600 hover:underline">На главную</a>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -41,6 +78,7 @@ function WorkspaceLayout() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:projectKey" element={<ProjectBoardPage />} />
+          <Route path="/projects/:projectKey/issues/:issueKey" element={<ProjectBoardPage />} />
           <Route path="/wiki/*" element={<WikiPage />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/files" element={<FilesPage />} />
@@ -52,17 +90,40 @@ function WorkspaceLayout() {
 
 function RootRedirect() {
   const { session, loading } = useAuth()
+  const navigate = useNavigate()
+  const [checking, setChecking] = useState(true)
 
-  if (loading) {
+  useEffect(() => {
+    if (loading) return
+    if (!session) {
+      setChecking(false)
+      return
+    }
+    workspaceApi
+      .list()
+      .then(({ data }) => {
+        if (data.length > 0) {
+          navigate(`/w/${data[0].slug}`)
+        } else {
+          navigate('/workspaces/new')
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to list workspaces:', err)
+        setChecking(false)
+      })
+  }, [loading, session, navigate])
+
+  if (loading || checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
       </div>
     )
   }
 
   if (!session) return <Navigate to="/login" />
-  return <Navigate to="/w/default" />
+  return null
 }
 
 function App() {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   DndContext,
   DragEndEvent,
@@ -26,6 +26,12 @@ interface BoardProps {
 export function BoardView({ board, projectKey, onIssueClick, onBoardUpdate }: BoardProps) {
   const [columns, setColumns] = useState<BoardColumnType[]>(board.columns)
   const [activeIssue, setActiveIssue] = useState<Issue | null>(null)
+  const [moveError, setMoveError] = useState('')
+
+  // Keep local columns in sync with server board data
+  useEffect(() => {
+    setColumns(board.columns)
+  }, [board])
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -48,6 +54,7 @@ export function BoardView({ board, projectKey, onIssueClick, onBoardUpdate }: Bo
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
     setActiveIssue(null)
+    setMoveError('')
 
     if (!over) return
 
@@ -80,6 +87,8 @@ export function BoardView({ board, projectKey, onIssueClick, onBoardUpdate }: Bo
 
     if (!targetColumn) return
 
+    const previousColumns = columns
+
     if (sourceColumn.id === targetColumn.id) {
       // Reorder within same column
       const oldIndex = sourceColumn.issues.findIndex((item) => item.id === activeId)
@@ -89,14 +98,18 @@ export function BoardView({ board, projectKey, onIssueClick, onBoardUpdate }: Bo
       const newIssues = arrayMove(sourceColumn.issues, oldIndex, newIndex)
       updateColumnIssues(sourceColumn.id, newIssues)
 
-      await moveIssueOnServer(
-        projectKey,
-        board.id,
-        sourceItem.issue_id,
-        sourceColumn.id,
-        targetColumn.id,
-        newIndex
-      )
+      try {
+        await moveIssueOnServer(
+          projectKey,
+          board.id,
+          sourceItem.issue_id,
+          sourceColumn.id,
+          targetColumn.id,
+          newIndex
+        )
+      } catch (err) {
+        revertColumns(previousColumns)
+      }
     } else {
       // Move between columns
       const newSourceIssues = sourceColumn.issues.filter((item) => item.id !== activeId)
@@ -119,14 +132,18 @@ export function BoardView({ board, projectKey, onIssueClick, onBoardUpdate }: Bo
         onBoardUpdate({ ...board, columns: newColumns })
       }
 
-      await moveIssueOnServer(
-        projectKey,
-        board.id,
-        sourceItem.issue_id,
-        sourceColumn.id,
-        targetColumn.id,
-        targetIndex !== -1 ? targetIndex : newTargetIssues.length - 1
-      )
+      try {
+        await moveIssueOnServer(
+          projectKey,
+          board.id,
+          sourceItem.issue_id,
+          sourceColumn.id,
+          targetColumn.id,
+          targetIndex !== -1 ? targetIndex : newTargetIssues.length - 1
+        )
+      } catch (err) {
+        revertColumns(previousColumns)
+      }
     }
   }
 
@@ -140,6 +157,14 @@ export function BoardView({ board, projectKey, onIssueClick, onBoardUpdate }: Bo
     }
   }
 
+  const revertColumns = (previousColumns: BoardColumnType[]) => {
+    setColumns(previousColumns)
+    if (onBoardUpdate) {
+      onBoardUpdate({ ...board, columns: previousColumns })
+    }
+    setMoveError('Не удалось сохранить перемещение. Попробуйте снова.')
+  }
+
   const moveIssueOnServer = async (
     projectKey: string,
     boardId: string,
@@ -148,42 +173,44 @@ export function BoardView({ board, projectKey, onIssueClick, onBoardUpdate }: Bo
     targetColumnId: string,
     newPosition: number
   ) => {
-    try {
-      await api.post(`/projects/${projectKey}/boards/${boardId}/issues/move`, {
-        issue_id: issueId,
-        source_column_id: sourceColumnId,
-        target_column_id: targetColumnId,
-        new_position: newPosition,
-      })
-    } catch (error) {
-      console.error('Failed to move issue:', error)
-      // Optionally revert or reload board
-    }
+    await api.post(`/projects/${projectKey}/boards/${boardId}/issues/move`, {
+      issue_id: issueId,
+      source_column_id: sourceColumnId,
+      target_column_id: targetColumnId,
+      new_position: newPosition,
+    })
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="flex gap-4 overflow-x-auto pb-4 h-full">
-        {columns.map((column) => (
-          <BoardColumnView
-            key={column.id}
-            column={column}
-            onIssueClick={onIssueClick}
-          />
-        ))}
-      </div>
-      <DragOverlay>
-        {activeIssue ? (
-          <div className="rotate-2">
-            <IssueCard issue={activeIssue} />
-          </div>
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+    <div className="h-full flex flex-col">
+      {moveError && (
+        <div className="mb-2 p-2 bg-red-50 text-red-700 rounded-lg text-sm">
+          {moveError}
+        </div>
+      )}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex gap-4 overflow-x-auto pb-4 h-full">
+          {columns.map((column) => (
+            <BoardColumnView
+              key={column.id}
+              column={column}
+              onIssueClick={onIssueClick}
+            />
+          ))}
+        </div>
+        <DragOverlay>
+          {activeIssue ? (
+            <div className="rotate-2">
+              <IssueCard issue={activeIssue} />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+    </div>
   )
 }

@@ -28,10 +28,13 @@ export function WikiPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
+    const title = form.title.trim()
+    if (!title) return
+    const payload = { title, content: form.content }
     if (selectedPage) {
-      await api.put(`/workspaces/${workspaceSlug}/wiki/pages/${selectedPage.id}`, form)
+      await api.put(`/workspaces/${workspaceSlug}/wiki/pages/${selectedPage.id}`, payload)
     } else {
-      await api.post(`/workspaces/${workspaceSlug}/wiki/pages`, form)
+      await api.post(`/workspaces/${workspaceSlug}/wiki/pages`, payload)
     }
     setIsEditorOpen(false)
     setSelectedPage(null)
@@ -107,11 +110,11 @@ export function WikiPage() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setIsEditorOpen(false)}>Отмена</Button>
-            <Button onClick={handleSave}>Сохранить</Button>
+            <Button type="submit" form="wiki-form">Сохранить</Button>
           </>
         }
       >
-        <form onSubmit={handleSave} className="space-y-4">
+        <form id="wiki-form" onSubmit={handleSave} className="space-y-4">
           <Input
             label="Заголовок"
             value={form.title}

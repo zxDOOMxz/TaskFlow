@@ -31,10 +31,8 @@ export function ProjectBoardPage() {
     setBoard(boardsRes.data[0] || null)
   }
 
-  const token = localStorage.getItem('access_token') || ''
   useWebSocket({
     roomId: board ? `project:${board.project_id}` : '',
-    token,
     onMessage: (data) => {
       if (data.type === 'issue_moved') {
         loadBoard()
@@ -45,6 +43,7 @@ export function ProjectBoardPage() {
   const handleCreateIssue = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!projectKey) return
+    if (!form.title.trim()) return
     await issueApi.create(projectKey, form)
     setIsCreateOpen(false)
     setForm({ title: '', description: '' })
@@ -81,11 +80,11 @@ export function ProjectBoardPage() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setIsCreateOpen(false)}>Отмена</Button>
-            <Button onClick={handleCreateIssue}>Создать</Button>
+            <Button type="submit" form="create-issue-form">Создать</Button>
           </>
         }
       >
-        <form onSubmit={handleCreateIssue} className="space-y-4">
+        <form id="create-issue-form" onSubmit={handleCreateIssue} className="space-y-4">
           <Input
             label="Название"
             value={form.title}

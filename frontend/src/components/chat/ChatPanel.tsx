@@ -18,7 +18,6 @@ export function ChatPanel({ workspaceSlug, roomId }: ChatPanelProps) {
   const [input, setInput] = useState('')
   const [room, setRoom] = useState<RoomDetail | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const token = localStorage.getItem('access_token') || ''
 
   useEffect(() => {
     chatApi.listMessages(workspaceSlug, roomId).then((res) => {
@@ -36,19 +35,30 @@ export function ChatPanel({ workspaceSlug, roomId }: ChatPanelProps) {
 
   const { isConnected } = useWebSocket({
     roomId: `room:${roomId}`,
-    token,
     onMessage: (data) => {
       if (data.type === 'new_message') {
-        setMessages((prev) => [...prev, data.data])
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === data.data.id)) return prev
+          return [...prev, data.data]
+        })
       }
     },
   })
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim()) return
-    await chatApi.sendMessage(workspaceSlug, roomId, input)
+    const text = input.trim()
+    if (!text) return
     setInput('')
+    try {
+      const { data } = await chatApi.sendMessage(workspaceSlug, roomId, text)
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === data.id)) return prev
+        return [...prev, data]
+      })
+    } catch (err) {
+      console.error('Failed to send message:', err)
+    }
   }
 
   return (

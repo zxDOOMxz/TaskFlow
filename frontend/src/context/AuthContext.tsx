@@ -8,6 +8,8 @@ import {
 } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { useAuthStore } from '@/stores/authStore'
+import { authApi } from '@/api/auth'
 
 interface AuthContextValue {
   user: User | null
@@ -25,6 +27,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const { setUser: setStoreUser, logout: storeLogout } = useAuthStore()
+
+  const loadProfile = useCallback(async (currentSession: Session | null) => {
+    if (!currentSession) {
+      setStoreUser(null)
+      return
+    }
+    try {
+      const { data } = await authApi.me()
+      setStoreUser(data)
+    } catch (err) {
+      console.error('Failed to load profile:', err)
+      setStoreUser(null)
+    }
+  }, [setStoreUser])
 
   useEffect(() => {
     let active = true
@@ -41,12 +58,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) console.error('getSession error:', error)
       setSession(data.session)
       setUser(data.session?.user ?? null)
+      loadProfile(data.session)
       setLoading(false)
     })
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession)
       setUser(nextSession?.user ?? null)
+      loadProfile(nextSession)
+      if (!nextSession) {
+        storeLogout()
+      }
     })
 
     return () => {
@@ -54,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(timeout)
       listener.subscription.unsubscribe()
     }
-  }, [])
+  }, [loadProfile, storeLogout])
 
   const signIn = useCallback(
     (email: string, password: string) =>
@@ -74,7 +96,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     []
   )
 
-  const signOut = useCallback(() => supabase.auth.signOut(), [])
+  const signOut = useCallback(async () => {
+    const result = await supabase.auth.signOut()
+    storeLogout()
+    return result
+  }, [storeLogout])
 
   const resetPassword = useCallback(
     (email: string) =>

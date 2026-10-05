@@ -28,11 +28,14 @@ export function ProjectsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!workspace) return
+    const key = form.key.trim().toUpperCase()
+    const name = form.name.trim()
+    if (!key || !name) return
     setLoading(true)
     try {
       await projectApi.create(workspace.slug, {
-        key: form.key.toUpperCase(),
-        name: form.name,
+        key,
+        name,
         description: form.description,
       })
       setIsModalOpen(false)
@@ -90,7 +93,7 @@ export function ProjectsPage() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Отмена</Button>
-            <Button onClick={handleCreate} disabled={loading}>
+            <Button type="submit" form="project-form" disabled={loading}>
               {loading ? 'Создание...' : 'Создать'}
             </Button>
           </>
