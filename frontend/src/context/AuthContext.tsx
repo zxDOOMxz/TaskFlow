@@ -29,7 +29,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let active = true
 
+    const timeout = setTimeout(() => {
+      if (!active) return
+      console.warn('Supabase getSession timed out')
+      setLoading(false)
+    }, 5000)
+
     supabase.auth.getSession().then(({ data, error }) => {
+      clearTimeout(timeout)
       if (!active) return
       if (error) console.error('getSession error:', error)
       setSession(data.session)
@@ -44,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       active = false
+      clearTimeout(timeout)
       listener.subscription.unsubscribe()
     }
   }, [])
