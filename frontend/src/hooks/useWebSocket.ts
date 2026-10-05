@@ -32,8 +32,12 @@ export function useWebSocket({ roomId, token, onMessage, onConnect, onDisconnect
       }
       if (!accessToken) return
 
+      const host =
+        import.meta.env.VITE_WS_HOST ||
+        (import.meta.env.VITE_API_URL
+          ? new URL(import.meta.env.VITE_API_URL).host
+          : window.location.host)
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const host = import.meta.env.VITE_WS_HOST || window.location.host
       const url = `${protocol}//${host}/ws/${roomId}?token=${accessToken}`
 
       socket = new WebSocket(url)
