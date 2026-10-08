@@ -8,25 +8,45 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      #boot-fallback { min-height:100vh; display:flex; align-items:center; justify-content:center; font-family:Inter,system-ui,sans-serif; background:#f8fafc; color:#334155; }
+      #boot-error { display:none; min-height:100vh; padding:2rem; font-family:Inter,system-ui,sans-serif; background:#fef2f2; color:#991b1b; white-space:pre-wrap; word-break:break-word; }
+    </style>
     <script>
+      function showBootError(msg) {
+        var fb = document.getElementById('boot-fallback');
+        var er = document.getElementById('boot-error');
+        if (fb) fb.style.display = 'none';
+        if (er) { er.style.display = 'block'; er.textContent = msg; }
+      }
       window.addEventListener('error', function (e) {
-        console.error('[HTML ERROR]', e.message, e.filename, e.lineno, e.colno, e.error);
+        var msg = '[HTML ERROR] ' + (e.message || '') + ' at ' + (e.filename || '') + ':' + (e.lineno || 0) + ':' + (e.colno || 0);
+        showBootError(msg);
       });
       window.addEventListener('unhandledrejection', function (e) {
-        console.error('[HTML UNHANDLED REJECTION]', e.reason);
+        var reason = e.reason && e.reason.stack ? e.reason.stack : String(e.reason);
+        showBootError('[HTML UNHANDLED REJECTION] ' + reason);
       });
       console.log('[HTML] index.html parsed, waiting for JS module...');
+      setTimeout(function() {
+        var root = document.getElementById('root');
+        var fallback = document.getElementById('boot-fallback');
+        if (root && root.children.length > 0 && root.children[0] === fallback) {
+          showBootError('Приложение не смогло запуститься за 15 секунд. Проверьте консоль браузера или попробуйте другой браузер.');
+        }
+      }, 15000);
     </script>
   </head>
   <body>
     <div id="root">
-      <div id="boot-fallback" style="min-height:100vh;display:flex;align-items:center;justify:center;font-family:Inter,system-ui,sans-serif;background:#f8fafc;color:#334155;">
+      <div id="boot-fallback">
         <div style="text-align:center;">
           <div style="width:48px;height:48px;border:4px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1rem;"></div>
           <p style="margin:0;font-size:1rem;">Загрузка TaskFlow…</p>
           <p style="margin:.5rem 0 0;font-size:.875rem;color:#64748b;">Если экран не изменится в течение 10 секунд, проверьте консоль браузера.</p>
         </div>
       </div>
+      <div id="boot-error"></div>
     </div>
     <noscript>
       <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;background:#fef2f2;color:#991b1b;padding:2rem;text-align:center;">
