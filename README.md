@@ -249,9 +249,52 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 > Бесплатный Render «засыпает» при неактивности (~15 мин), поэтому первый запрос после паузы может занять 30–60 секунд.
 
+### Деплой фронтенда на Timeweb (shared-хостинг)
+
+Если Netlify/Vercel не отдаёт статические файлы в вашем регионе, фронтенд можно разместить на Timeweb, оставив бэкенд на Render и базу на Supabase.
+
+#### 1. Сборка
+
+В папке `frontend` выполните:
+
+```powershell
+$env:VITE_SUPABASE_URL="https://emsmevtccyvujrtwnlym.supabase.co"
+$env:VITE_SUPABASE_ANON_KEY="sb_publishable_Rx5b3syJj3gOpvOt3IthlQ_ffA38Kq2"
+$env:VITE_API_URL="https://taskflow-zcib.onrender.com"
+npm run build
+```
+
+После сборки в `frontend/dist/` будут файлы:
+- `index.html`
+- `.htaccess`
+
+#### 2. Загрузка на Timeweb
+
+1. В панели Timeweb откройте **Файлы** или **Файловый менеджер**.
+2. Перейдите в корень сайта (обычно `public_html` или папка домена).
+3. Удалите стандартные `index.html`, `index.php` и т.п.
+4. Загрузите `index.html` и `.htaccess` из `frontend/dist/`.
+
+`.htaccess` настроит Apache так, чтобы SPA-роутинг работал при прямом переходе по ссылкам (`/w/...`, `/projects/...`).
+
+#### 3. DNS
+
+В панели управления доменом (Selectel) измените A-записи:
+
+| Тип | Имя | Значение |
+|-----|-----|----------|
+| A | `@` | `92.53.96.201` |
+| A | `www` | `92.53.96.201` |
+
+Если NS-записи сейчас указывают на Netlify (`dns*.p03.nsone.net`), верните их на NS сервера регистратора/Selectel, иначе DNS не будет управляться из панели Selectel.
+
+#### 4. CORS
+
+После смены домена обновите `CORS_ORIGINS` в Render (см. раздел ниже).
+
 ### Альтернативные хостинги
 
-- **Фронтенд**: Vercel, Netlify, GitHub Pages, Cloudflare Pages.
+- **Фронтенд**: Vercel, Netlify, GitHub Pages, Cloudflare Pages, Timeweb.
 - **Бэкенд**: Render, Railway, Fly.io, Koyeb.
 
 ## Обновление CORS в Render
