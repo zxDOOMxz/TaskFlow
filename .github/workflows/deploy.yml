@@ -7,8 +7,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/taskflow-backend
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/taskflow-frontend
+  # Имена образов в GHCR должны быть в нижнем регистре, owner репозитория (zxDOOMxz) содержит заглавные
+  BACKEND_IMAGE: ghcr.io/zxdoomxz/taskflow-backend
+  FRONTEND_IMAGE: ghcr.io/zxdoomxz/taskflow-frontend
 
 jobs:
   build:

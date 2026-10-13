@@ -12,6 +12,13 @@
         var segmentsToKeep = 1; // "/<repo>" — один сегмент базового пути
         var l = window.location;
         var parts = l.pathname.split('/');
+        // Корень домена (нет сегмента репозитория): редирект дал бы тот же адрес и бесконечный цикл.
+        if (!parts[1]) {
+          document.addEventListener('DOMContentLoaded', function () {
+            document.body.innerHTML = '<p style="font-family:sans-serif;padding:2rem">Откройте <a href="/TaskFlow/">/TaskFlow/</a></p>';
+          });
+          return;
+        }
         var base = parts.slice(0, 1 + segmentsToKeep).join('/');
         var rest = parts.slice(1 + segmentsToKeep).join('/');
         var query = l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '';
