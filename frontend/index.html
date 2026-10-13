@@ -2,7 +2,6 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TaskFlow</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,6 +11,17 @@
       #boot-fallback { min-height:100vh; display:flex; align-items:center; justify-content:center; font-family:Inter,system-ui,sans-serif; background:#f8fafc; color:#334155; }
       #boot-error { display:none; min-height:100vh; padding:2rem; font-family:Inter,system-ui,sans-serif; background:#fef2f2; color:#991b1b; white-space:pre-wrap; word-break:break-word; }
     </style>
+    <script>
+      // Восстановление пути после редиректа с 404.html (GitHub Pages)
+      (function (l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search.slice(1).split('&').map(function (s) {
+            return s.replace(/~and~/g, '&');
+          }).join('?');
+          window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
+        }
+      })(window.location);
+    </script>
     <script>
       function showBootError(msg) {
         var fb = document.getElementById('boot-fallback');

@@ -9,6 +9,16 @@ interface UseWebSocketOptions {
   onDisconnect?: () => void
 }
 
+// Хост WS: явный VITE_WS_HOST, либо хост абсолютного VITE_API_URL (например, Render при хостинге фронта на GitHub Pages),
+// либо текущий хост при относительном VITE_API_URL (/api/v1 через nginx).
+function resolveWsHost(): string {
+  const explicit = import.meta.env.VITE_WS_HOST
+  if (explicit) return explicit
+  const api = import.meta.env.VITE_API_URL || ''
+  if (/^https?:\/\//.test(api)) return new URL(api).host
+  return window.location.host
+}
+
 export function useWebSocket({ roomId, token, onMessage, onConnect, onDisconnect }: UseWebSocketOptions) {
   const ws = useRef<WebSocket | null>(null)
   const [isConnected, setIsConnected] = useState(false)
@@ -30,13 +40,9 @@ export function useWebSocket({ roomId, token, onMessage, onConnect, onDisconnect
           console.error('Failed to get session for WebSocket:', err)
         }
       }
-      if (!accessToken) return
+      if (!accessToken || cancelled) return
 
-      const host =
-        import.meta.env.VITE_WS_HOST ||
-        (import.meta.env.VITE_API_URL
-          ? new URL(import.meta.env.VITE_API_URL).host
-          : window.location.host)
+      const host = resolveWsHost()
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
       const url = `${protocol}//${host}/ws/${roomId}?token=${accessToken}`
 
@@ -72,7 +78,10 @@ export function useWebSocket({ roomId, token, onMessage, onConnect, onDisconnect
       }
     }
 
-    connect()
+    connect().catch((err) => {
+      console.error('WebSocket connect failed:', err)
+      if (!cancelled) setError('WebSocket connect failed')
+    })
 
     return () => {
       cancelled = true

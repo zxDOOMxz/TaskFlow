@@ -8,6 +8,9 @@ import './index.css'
 
 console.log('[MAIN] main.tsx module executing')
 
+// BASE_URL из Vite: "/" или "/TaskFlow/". Для BrowserRouter нужен без хвостового слеша.
+const ROUTER_BASENAME = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+
 const requiredEnv = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY']
 const missing = requiredEnv.filter((key) => !import.meta.env[key])
 
@@ -30,7 +33,7 @@ if (missing.length > 0) {
           ))}
         </ul>
         <p className="text-sm text-slate-500">
-          Добавьте их в разделе Environment variables настроек сайта в Netlify и пересоберите деплой.
+          Добавьте их в переменные окружения сборки (GitHub: Settings → Secrets and variables → Actions → Variables) и пересоберите деплой.
         </p>
       </div>
     </div>
@@ -40,7 +43,7 @@ if (missing.length > 0) {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <ErrorBoundary>
-        <BrowserRouter>
+        <BrowserRouter basename={ROUTER_BASENAME}>
           <AuthProvider>
             <App />
           </AuthProvider>

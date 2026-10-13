@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>TaskFlow</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // SPA fallback для GitHub Pages (project page: /<repo>/...).
+      // Кодирует путь в query и перенаправляет на корень приложения;
+      // index.html декодирует обратно через history.replaceState.
+      (function () {
+        var segmentsToKeep = 1; // "/<repo>" — один сегмент базового пути
+        var l = window.location;
+        var parts = l.pathname.split('/');
+        var base = parts.slice(0, 1 + segmentsToKeep).join('/');
+        var rest = parts.slice(1 + segmentsToKeep).join('/');
+        var query = l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '';
+        l.replace(
+          l.protocol + '//' + l.host + base + '/?/' + rest.replace(/&/g, '~and~') + query + l.hash
+        );
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
