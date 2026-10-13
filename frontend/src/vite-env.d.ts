@@ -10,3 +10,7 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+// Базовый путь приложения с завершающим слешем: "/" или "/TaskFlow/".
+// Задаётся через define в vite.config.ts (import.meta.env.BASE_URL не подходит: singlefile ставит base "./").
+declare const __APP_BASE__: string

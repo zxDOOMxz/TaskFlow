@@ -8,8 +8,8 @@ import './index.css'
 
 console.log('[MAIN] main.tsx module executing')
 
-// BASE_URL из Vite: "/" или "/TaskFlow/". Для BrowserRouter нужен без хвостового слеша.
-const ROUTER_BASENAME = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+// Для BrowserRouter нужен basename без хвостового слеша: "/" или "/TaskFlow".
+const ROUTER_BASENAME = __APP_BASE__.replace(/\/$/, '') || '/'
 
 const requiredEnv = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY']
 const missing = requiredEnv.filter((key) => !import.meta.env[key])

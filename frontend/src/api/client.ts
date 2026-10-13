@@ -30,7 +30,7 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${token}`
         return api(originalRequest)
       }
-      window.location.href = `${import.meta.env.BASE_URL}login`
+      window.location.href = `${__APP_BASE__}login`
     }
     return Promise.reject(error)
   }
