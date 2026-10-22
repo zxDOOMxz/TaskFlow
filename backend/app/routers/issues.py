@@ -45,19 +45,17 @@ def get_project_and_workspace(project_key: str, db: Session):
 
 
 def get_next_issue_key(project: Project, db: Session) -> str:
-    last = (
-        db.query(Issue)
-        .filter(Issue.project_id == project.id)
-        .order_by(Issue.created_at.desc())
-        .first()
-    )
-    number = 1
-    if last and last.key.startswith(f"{project.key}-"):
-        try:
-            number = int(last.key.split("-")[-1]) + 1
-        except ValueError:
-            number = 1
-    return f"{project.key}-{number}"
+    # Максимальный существующий номер, а не "последняя по created_at":
+    # параллельное создание и удалённые задачи не должны ломать нумерацию.
+    prefix = f"{project.key}-"
+    max_number = 0
+    for (key,) in db.query(Issue.key).filter(Issue.project_id == project.id).all():
+        if key.startswith(prefix):
+            try:
+                max_number = max(max_number, int(key[len(prefix):]))
+            except ValueError:
+                continue
+    return f"{project.key}-{max_number + 1}"
 
 
 def can_edit_issue(issue: Issue, user: User):
@@ -85,11 +83,11 @@ def list_issues(
 
     query = db.query(Issue).filter(Issue.project_id == project.id)
     if sprint_id:
-        query = query.filter(Issue.sprint_id == sprint_id)
+        query = query.filter(Issue.sprint_id == str(sprint_id))
     if status_id:
-        query = query.filter(Issue.issue_status_id == status_id)
+        query = query.filter(Issue.issue_status_id == str(status_id))
     if assignee_id:
-        query = query.filter(Issue.assignee_id == assignee_id)
+        query = query.filter(Issue.assignee_id == str(assignee_id))
 
     return query.order_by(Issue.created_at.desc()).all()
 
@@ -127,13 +125,13 @@ def create_issue(
 
     issue = Issue(
         project_id=project.id,
-        sprint_id=data.sprint_id,
-        parent_id=data.parent_id,
+        sprint_id=str(data.sprint_id) if data.sprint_id else None,
+        parent_id=str(data.parent_id) if data.parent_id else None,
         issue_type_id=issue_type.id if issue_type else data.issue_type_id,
         issue_status_id=default_status.id,
         issue_priority_id=priority.id if priority else data.issue_priority_id,
         reporter_id=user.id,
-        assignee_id=data.assignee_id,
+        assignee_id=str(data.assignee_id) if data.assignee_id else None,
         key=get_next_issue_key(project, db),
         title=data.title,
         description=data.description,
@@ -194,7 +192,14 @@ def update_issue(
     if not can_edit_issue(issue, user):
         raise HTTPException(status_code=403, detail="Permission denied")
 
+    # Поля-идентификаторы хранятся строками в БД: приводим UUID к str
+    uuid_fields = {
+        "sprint_id", "parent_id", "assignee_id", "issue_type_id",
+        "issue_status_id", "issue_priority_id",
+    }
     for field, value in data.model_dump(exclude_unset=True).items():
+        if field in uuid_fields and value is not None:
+            value = str(value)
         setattr(issue, field, value)
 
     db.commit()
@@ -263,6 +268,7 @@ def add_time_log(
     db: Session = Depends(get_db),
 ):
     project = get_project_and_workspace(project_key, db)
+    require_workspace_member(project.workspace, user)
     issue = db.query(Issue).filter(Issue.project_id == project.id, Issue.key == issue_key.upper()).first()
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
@@ -284,6 +290,7 @@ def add_link(
     db: Session = Depends(get_db),
 ):
     project = get_project_and_workspace(project_key, db)
+    require_workspace_member(project.workspace, user)
     source = db.query(Issue).filter(Issue.project_id == project.id, Issue.key == issue_key.upper()).first()
     if not source:
         raise HTTPException(status_code=404, detail="Issue not found")

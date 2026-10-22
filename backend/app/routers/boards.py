@@ -27,10 +27,11 @@ def get_project(project_key: str, db: Session) -> Project:
     return project
 
 
-@router.get("", response_model=List[BoardRead])
+@router.get("", response_model=List[BoardDetail])
 def list_boards(project_key: str, user=Depends(get_current_user), db: Session = Depends(get_db)):
     project = get_project(project_key, db)
     require_workspace_member(project.workspace, user)
+    # BoardDetail (с колонками и задачами): фронтенд рендерит доску прямо из списка
     return db.query(Board).filter(Board.project_id == project.id).all()
 
 
@@ -70,7 +71,7 @@ def create_board(
             col = BoardColumn(
                 board_id=board.id,
                 name=col_data.name,
-                issue_status_id=col_data.issue_status_id,
+                issue_status_id=str(col_data.issue_status_id) if col_data.issue_status_id else None,
                 position=idx if col_data.position is None else col_data.position,
                 wip_limit=col_data.wip_limit,
             )
@@ -104,7 +105,7 @@ def get_board(
 ):
     project = get_project(project_key, db)
     require_workspace_member(project.workspace, user)
-    board = db.query(Board).filter(Board.id == board_id, Board.project_id == project.id).first()
+    board = db.query(Board).filter(Board.id == str(board_id), Board.project_id == project.id).first()
     if not board:
         raise HTTPException(status_code=404, detail="Board not found")
     return board
@@ -121,25 +122,29 @@ async def move_issue(
     project = get_project(project_key, db)
     require_workspace_member(project.workspace, user)
 
-    board = db.query(Board).filter(Board.id == board_id, Board.project_id == project.id).first()
+    board = db.query(Board).filter(Board.id == str(board_id), Board.project_id == project.id).first()
     if not board:
         raise HTTPException(status_code=404, detail="Board not found")
 
-    source_col = db.query(BoardColumn).filter(BoardColumn.id == data.source_column_id, BoardColumn.board_id == board.id).first()
-    target_col = db.query(BoardColumn).filter(BoardColumn.id == data.target_column_id, BoardColumn.board_id == board.id).first()
+    source_col = db.query(BoardColumn).filter(
+        BoardColumn.id == str(data.source_column_id), BoardColumn.board_id == board.id
+    ).first()
+    target_col = db.query(BoardColumn).filter(
+        BoardColumn.id == str(data.target_column_id), BoardColumn.board_id == board.id
+    ).first()
 
     if not source_col or not target_col:
         raise HTTPException(status_code=404, detail="Column not found")
 
     bci = (
         db.query(BoardColumnIssue)
-        .filter(BoardColumnIssue.board_column_id == source_col.id, BoardColumnIssue.issue_id == data.issue_id)
+        .filter(BoardColumnIssue.board_column_id == source_col.id, BoardColumnIssue.issue_id == str(data.issue_id))
         .first()
     )
     if not bci:
         raise HTTPException(status_code=404, detail="Issue not on source column")
 
-    issue = db.query(Issue).filter(Issue.id == data.issue_id, Issue.project_id == project.id).first()
+    issue = db.query(Issue).filter(Issue.id == str(data.issue_id), Issue.project_id == project.id).first()
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
 

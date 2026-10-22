@@ -1,4 +1,5 @@
 import io
+import re
 from typing import Optional
 from uuid import uuid4
 
@@ -44,8 +45,8 @@ def upload_file_supabase(
     settings = settings or get_settings()
     _ensure_supabase_bucket(settings)
 
-    ext = filename.split(".")[-1] if "." in filename else ""
-    storage_key = f"{entity_type or 'files'}/{uuid4()}.{ext}" if ext else f"{entity_type or 'files'}/{uuid4()}"
+    folder, ext = _safe_storage_parts(filename, entity_type)
+    storage_key = f"{folder}/{uuid4()}.{ext}" if ext else f"{folder}/{uuid4()}"
 
     url = f"{settings.supabase_url}/storage/v1/object/taskflow/{storage_key}"
     response = httpx.post(
@@ -109,8 +110,8 @@ def upload_file_minio(
     ensure_bucket()
     client = get_minio_client()
 
-    ext = filename.split(".")[-1] if "." in filename else ""
-    storage_key = f"{entity_type or 'files'}/{uuid4()}.{ext}" if ext else f"{entity_type or 'files'}/{uuid4()}"
+    folder, ext = _safe_storage_parts(filename, entity_type)
+    storage_key = f"{folder}/{uuid4()}.{ext}" if ext else f"{folder}/{uuid4()}"
 
     client.put_object(
         bucket_name=settings.minio_bucket,
@@ -133,6 +134,14 @@ def delete_file_minio(storage_key: str):
 
 
 # Unified interface
+def _safe_storage_parts(filename: str, entity_type: Optional[str]) -> tuple:
+    """Санитизация частей ключа хранилища: только [a-z0-9_-], без path traversal."""
+    folder = re.sub(r"[^a-z0-9_-]", "", (entity_type or "files").lower())[:50] or "files"
+    ext = filename.rsplit(".", 1)[-1] if "." in filename else ""
+    ext = re.sub(r"[^A-Za-z0-9]", "", ext)[:10].lower()
+    return folder, ext
+
+
 def _use_supabase() -> bool:
     s = get_settings()
     return s.is_supabase_enabled and bool(s.supabase_secret_or_key)

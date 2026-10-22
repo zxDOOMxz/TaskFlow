@@ -66,14 +66,18 @@ def create_sprint(
     return sprint
 
 
+def _get_sprint(project: Project, sprint_id: UUID, db: Session) -> Sprint:
+    sprint = db.query(Sprint).filter(Sprint.id == str(sprint_id), Sprint.project_id == project.id).first()
+    if not sprint:
+        raise HTTPException(status_code=404, detail="Sprint not found")
+    return sprint
+
+
 @router.get("/{sprint_id}", response_model=SprintDetail)
 def get_sprint(project_key: str, sprint_id: UUID, user=Depends(get_current_user), db: Session = Depends(get_db)):
     project = get_project(project_key, db)
     require_workspace_member(project.workspace, user)
-    sprint = db.query(Sprint).filter(Sprint.id == sprint_id, Sprint.project_id == project.id).first()
-    if not sprint:
-        raise HTTPException(status_code=404, detail="Sprint not found")
-    return sprint
+    return _get_sprint(project, sprint_id, db)
 
 
 @router.put("/{sprint_id}", response_model=SprintRead)
@@ -88,9 +92,7 @@ def update_sprint(
     if not can_manage_sprints(project, user):
         raise HTTPException(status_code=403, detail="Manager or admin required")
 
-    sprint = db.query(Sprint).filter(Sprint.id == sprint_id, Sprint.project_id == project.id).first()
-    if not sprint:
-        raise HTTPException(status_code=404, detail="Sprint not found")
+    sprint = _get_sprint(project, sprint_id, db)
 
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(sprint, field, value)
@@ -110,9 +112,7 @@ def start_sprint(project_key: str, sprint_id: UUID, user=Depends(get_current_use
     if active:
         raise HTTPException(status_code=400, detail="Another sprint is active")
 
-    sprint = db.query(Sprint).filter(Sprint.id == sprint_id, Sprint.project_id == project.id).first()
-    if not sprint:
-        raise HTTPException(status_code=404, detail="Sprint not found")
+    sprint = _get_sprint(project, sprint_id, db)
 
     sprint.status = "active"
     if not sprint.start_date:
@@ -131,9 +131,7 @@ def complete_sprint(project_key: str, sprint_id: UUID, user=Depends(get_current_
     if not can_manage_sprints(project, user):
         raise HTTPException(status_code=403, detail="Manager or admin required")
 
-    sprint = db.query(Sprint).filter(Sprint.id == sprint_id, Sprint.project_id == project.id).first()
-    if not sprint:
-        raise HTTPException(status_code=404, detail="Sprint not found")
+    sprint = _get_sprint(project, sprint_id, db)
 
     sprint.status = "completed"
     db.commit()
@@ -147,9 +145,7 @@ def close_sprint(project_key: str, sprint_id: UUID, user=Depends(get_current_use
     if not can_manage_sprints(project, user):
         raise HTTPException(status_code=403, detail="Manager or admin required")
 
-    sprint = db.query(Sprint).filter(Sprint.id == sprint_id, Sprint.project_id == project.id).first()
-    if not sprint:
-        raise HTTPException(status_code=404, detail="Sprint not found")
+    sprint = _get_sprint(project, sprint_id, db)
 
     for issue in sprint.issues:
         if issue.issue_status.category != "done":
@@ -166,9 +162,7 @@ def burndown(project_key: str, sprint_id: UUID, user=Depends(get_current_user), 
     project = get_project(project_key, db)
     require_workspace_member(project.workspace, user)
 
-    sprint = db.query(Sprint).filter(Sprint.id == sprint_id, Sprint.project_id == project.id).first()
-    if not sprint:
-        raise HTTPException(status_code=404, detail="Sprint not found")
+    sprint = _get_sprint(project, sprint_id, db)
 
     total = len(sprint.issues)
     if not sprint.start_date or not sprint.end_date or total == 0:

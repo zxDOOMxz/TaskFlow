@@ -69,8 +69,8 @@ class Workspace(Base):
     updated_at = Column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
 
     owner = relationship("User", back_populates="owned_workspaces")
-    members = relationship("WorkspaceMember", back_populates="workspace")
-    projects = relationship("Project", back_populates="workspace")
+    members = relationship("WorkspaceMember", back_populates="workspace", cascade="all, delete-orphan")
+    projects = relationship("Project", back_populates="workspace", cascade="all, delete-orphan")
 
 
 class WorkspaceMember(Base):
@@ -104,8 +104,8 @@ class Project(Base):
 
     workspace = relationship("Workspace", back_populates="projects")
     lead = relationship("User")
-    members = relationship("ProjectMember", back_populates="project")
-    issues = relationship("Issue", back_populates="project")
+    members = relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
+    issues = relationship("Issue", back_populates="project", cascade="all, delete-orphan")
 
     __table_args__ = (UniqueConstraint("workspace_id", "key", name="uix_workspace_project_key"),)
 
@@ -214,8 +214,8 @@ class Issue(Base):
     issue_priority = relationship("IssuePriority")
     reporter = relationship("User", foreign_keys=[reporter_id])
     assignee = relationship("User", foreign_keys=[assignee_id])
-    comments = relationship("IssueComment", back_populates="issue", order_by="IssueComment.created_at")
-    time_logs = relationship("IssueTimeLog", back_populates="issue", order_by="IssueTimeLog.created_at")
+    comments = relationship("IssueComment", back_populates="issue", order_by="IssueComment.created_at", cascade="all, delete-orphan")
+    time_logs = relationship("IssueTimeLog", back_populates="issue", order_by="IssueTimeLog.created_at", cascade="all, delete-orphan")
 
     __table_args__ = (UniqueConstraint("project_id", "key", name="uix_project_issue_key"),)
 
@@ -273,7 +273,7 @@ class Board(Base):
     created_at = Column(DateTime(timezone=True), default=now_utc)
 
     project = relationship("Project")
-    columns = relationship("BoardColumn", back_populates="board", order_by="BoardColumn.position")
+    columns = relationship("BoardColumn", back_populates="board", order_by="BoardColumn.position", cascade="all, delete-orphan")
 
 
 class BoardColumn(Base):
@@ -288,7 +288,7 @@ class BoardColumn(Base):
 
     board = relationship("Board", back_populates="columns")
     issue_status = relationship("IssueStatus")
-    issues = relationship("BoardColumnIssue", back_populates="column", order_by="BoardColumnIssue.position")
+    issues = relationship("BoardColumnIssue", back_populates="column", order_by="BoardColumnIssue.position", cascade="all, delete-orphan")
 
 
 class BoardColumnIssue(Base):

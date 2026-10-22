@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { useAuth } from '@/context/AuthContext'
@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/authStore'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { signIn, signUp } = useAuth()
   const { setUser } = useAuthStore()
   const [isRegister, setIsRegister] = useState(false)
@@ -44,7 +45,8 @@ export function LoginPage() {
       // Sync/create the local user/workspace via the backend.
       const me = await authApi.me()
       setUser(me.data)
-      navigate('/')
+      const from = (location.state as { from?: string } | null)?.from
+      navigate(from && from !== '/login' ? from : '/')
     } catch (err: any) {
       setError(err.message || err.response?.data?.detail || 'Ошибка авторизации')
     } finally {

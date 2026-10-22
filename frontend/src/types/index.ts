@@ -9,6 +9,14 @@ export interface User {
   created_at: string
 }
 
+// Короткая версия пользователя: её отдают вложенные поля бэкенда (author, reporter и т.д.)
+export interface UserShort {
+  id: string
+  email: string
+  first_name: string
+  last_name: string
+}
+
 export interface Workspace {
   id: string
   name: string
@@ -22,7 +30,7 @@ export interface WorkspaceMember {
   id: string
   user_id: string
   role: 'admin' | 'manager' | 'developer' | 'viewer'
-  user: User
+  user: UserShort
 }
 
 export interface Project {
@@ -77,8 +85,8 @@ export interface Issue {
   issue_type: IssueType
   issue_status: IssueStatus
   issue_priority: IssuePriority
-  reporter: User
-  assignee?: User
+  reporter: UserShort
+  assignee?: UserShort
 }
 
 export interface Sprint {
@@ -125,7 +133,7 @@ export interface WikiPage {
   is_published: boolean
   created_at: string
   updated_at: string
-  author: User
+  author: UserShort
 }
 
 export interface Room {
@@ -158,5 +166,5 @@ export interface MessageRead {
   content: string
   mentions?: Record<string, any>
   created_at: string
-  author: User
+  author: UserShort
 }

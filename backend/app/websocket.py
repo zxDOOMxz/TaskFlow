@@ -1,8 +1,11 @@
 import json
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from fastapi import WebSocket, WebSocketDisconnect
 
+from app.config import get_settings
+from app.database import SessionLocal
+from app.models import Project, Room, RoomMember, User
 from app.security import decode_token
 
 
@@ -46,13 +49,67 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-async def websocket_endpoint(websocket: WebSocket, room_id: str, token: str):
+def _decode_ws_token(token: str) -> Optional[dict]:
+    """Сначала Supabase JWT (основной flow), затем локальный access-токен."""
+    settings = get_settings()
+    if settings.is_supabase_enabled:
+        from app.supabase_auth import decode_supabase_token
+
+        payload = decode_supabase_token(token, settings)
+        if payload:
+            return payload
     payload = decode_token(token)
-    if not payload or payload.get("type") != "access":
+    if payload and payload.get("type") == "access":
+        return payload
+    return None
+
+
+def _can_access_room(room_id: str, user: User) -> bool:
+    """room:<uuid> — участник комнаты или админ workspace; project:<uuid> — участник workspace."""
+    db = SessionLocal()
+    try:
+        if room_id.startswith("room:"):
+            room = db.query(Room).filter(Room.id == room_id[len("room:"):]).first()
+            if not room:
+                return False
+            member = db.query(RoomMember).filter(RoomMember.room_id == room.id, RoomMember.user_id == user.id).first()
+            if member:
+                return True
+            return room.workspace.owner_id == user.id or any(
+                m.user_id == user.id and m.role == "admin" for m in room.workspace.members
+            )
+        if room_id.startswith("project:"):
+            project = db.query(Project).filter(Project.id == room_id[len("project:"):]).first()
+            if not project:
+                return False
+            return project.workspace.owner_id == user.id or any(
+                m.user_id == user.id for m in project.workspace.members
+            )
+        return False
+    finally:
+        db.close()
+
+
+async def websocket_endpoint(websocket: WebSocket, room_id: str, token: str):
+    payload = _decode_ws_token(token)
+    user_id = payload.get("sub") if payload else None
+    if not payload or not user_id:
         await websocket.close(code=1008)
         return
 
-    user_id = payload.get("sub")
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+    finally:
+        db.close()
+    if not user or not user.is_active:
+        await websocket.close(code=1008)
+        return
+
+    if not _can_access_room(room_id, user):
+        await websocket.close(code=1008)
+        return
+
     await manager.connect(websocket, room_id, user_id)
 
     try:

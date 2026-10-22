@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import get_current_user, require_workspace_member
-from app.models import Board, BoardColumn, IssueStatus, Project, ProjectMember, User, Workspace
+from app.models import Board, BoardColumn, IssueStatus, Project, ProjectMember, User, Workspace, WorkspaceMember
 from app.routers.workspaces import get_workspace_by_slug, is_workspace_admin
 from app.schemas.projects import (
     ProjectCreate,
@@ -119,7 +119,7 @@ def update_project(
     if data.description is not None:
         project.description = data.description
     if data.lead_id:
-        project.lead_id = data.lead_id
+        project.lead_id = str(data.lead_id)
     if data.icon:
         project.icon = data.icon
 
@@ -173,6 +173,13 @@ def add_project_member(
     target = db.query(User).filter(User.email == data.email).first()
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
+
+    # Пользователь должен состоять в workspace: роли проекта не должны обходить workspace-доступ
+    in_workspace = db.query(WorkspaceMember).filter(
+        WorkspaceMember.workspace_id == project.workspace_id, WorkspaceMember.user_id == target.id
+    ).first()
+    if not in_workspace:
+        raise HTTPException(status_code=400, detail="User is not a member of this workspace")
 
     ws_member = db.query(ProjectMember).filter(
         ProjectMember.project_id == project.id, ProjectMember.user_id == target.id

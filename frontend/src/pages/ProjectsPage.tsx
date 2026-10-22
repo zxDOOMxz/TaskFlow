@@ -15,6 +15,7 @@ export function ProjectsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [form, setForm] = useState({ key: '', name: '', description: '' })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!workspace) return
@@ -22,7 +23,9 @@ export function ProjectsPage() {
   }, [workspace])
 
   const loadProjects = () => {
-    workspaceApi.projects(workspace!.slug).then((res) => setProjects(res.data))
+    workspaceApi.projects(workspace!.slug)
+      .then((res) => setProjects(res.data))
+      .catch((err) => setError(err.response?.data?.detail || 'Не удалось загрузить проекты'))
   }
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -51,6 +54,7 @@ export function ProjectsPage() {
       <TopBar title="Проекты">
         <Button onClick={() => setIsModalOpen(true)}>+ Новый проект</Button>
       </TopBar>
+      {error && <div className="mx-6 mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-5xl mx-auto">
           {projects.length === 0 ? (

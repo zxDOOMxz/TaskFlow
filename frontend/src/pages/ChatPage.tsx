@@ -17,6 +17,8 @@ export function ChatPage() {
       if (res.data.length > 0 && !selectedRoomId) {
         setSelectedRoomId(res.data[0].id)
       }
+    }).catch((err) => {
+      console.error('Failed to load rooms:', err)
     })
   }, [workspaceSlug])
 

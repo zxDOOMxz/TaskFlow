@@ -6,15 +6,11 @@ import { AuthProvider } from './context/AuthContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import './index.css'
 
-console.log('[MAIN] main.tsx module executing')
-
 // Для BrowserRouter нужен basename без хвостового слеша: "/" или "/TaskFlow".
 const ROUTER_BASENAME = __APP_BASE__.replace(/\/$/, '') || '/'
 
 const requiredEnv = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY']
 const missing = requiredEnv.filter((key) => !import.meta.env[key])
-
-console.log('[MAIN] missing env vars:', missing)
 
 if (missing.length > 0) {
   console.error('[MAIN] Rendering missing env error')
@@ -39,7 +35,6 @@ if (missing.length > 0) {
     </div>
   )
 } else {
-  console.log('[MAIN] Rendering app')
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <ErrorBoundary>

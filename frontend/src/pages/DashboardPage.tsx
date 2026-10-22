@@ -14,6 +14,7 @@ export function DashboardPage() {
     if (!workspace) return
     workspaceApi.projects(workspace.slug)
       .then((res) => setProjects(res.data))
+      .catch((err) => console.error('Failed to load projects:', err))
       .finally(() => setLoading(false))
   }, [workspace])
 

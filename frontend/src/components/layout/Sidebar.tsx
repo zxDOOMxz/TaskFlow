@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/stores/authStore'
+import { useAuth } from '@/context/AuthContext'
 import { Link, useLocation } from 'react-router-dom'
 
 interface SidebarProps {
@@ -6,7 +7,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ workspaceSlug }: SidebarProps) {
-  const { user, logout } = useAuthStore()
+  const { user } = useAuthStore()
+  const { signOut } = useAuth()
   const location = useLocation()
 
   const navItems = [
@@ -53,7 +55,7 @@ export function Sidebar({ workspaceSlug }: SidebarProps) {
           </div>
         </div>
         <button
-          onClick={async () => { await logout() }}
+          onClick={async () => { await signOut() }}
           className="w-full text-left px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
         >
           Выйти

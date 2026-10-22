@@ -260,7 +260,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 ```powershell
 $env:VITE_SUPABASE_URL="https://emsmevtccyvujrtwnlym.supabase.co"
 $env:VITE_SUPABASE_ANON_KEY="sb_publishable_Rx5b3syJj3gOpvOt3IthlQ_ffA38Kq2"
-$env:VITE_API_URL="https://taskflow-zcib.onrender.com"
+$env:VITE_API_URL="https://taskflow-zcib.onrender.com/api/v1"
 npm run build
 ```
 
@@ -306,7 +306,7 @@ npm run build
 3. Найди переменную `CORS_ORIGINS`.
 4. Измени значение на новый домен (домены разделяй запятыми, без пробелов):
    ```
-   https://itaskflow.ru,https://www.itaskflow.ru
+   https://task-flow.work.gd,https://www.task-flow.work.gd,https://zxdoomxz.github.io
    ```
 5. Нажми **Save Changes**.
 6. Перейди в **Deploys** и нажми **Manual Deploy → Deploy latest commit**.

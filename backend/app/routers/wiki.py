@@ -92,7 +92,8 @@ def update_page(
     db: Session = Depends(get_db),
 ):
     ws = get_workspace_by_slug(workspace_slug, db)
-    page = db.query(WikiPage).filter(WikiPage.id == page_id, WikiPage.workspace_id == ws.id).first()
+    require_workspace_member(ws, user)
+    page = db.query(WikiPage).filter(WikiPage.id == str(page_id), WikiPage.workspace_id == ws.id).first()
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
 
@@ -121,7 +122,8 @@ def update_page(
 @router.delete("/pages/{page_id}")
 def delete_page(workspace_slug: str, page_id: UUID, user=Depends(get_current_user), db: Session = Depends(get_db)):
     ws = get_workspace_by_slug(workspace_slug, db)
-    page = db.query(WikiPage).filter(WikiPage.id == page_id, WikiPage.workspace_id == ws.id).first()
+    require_workspace_member(ws, user)
+    page = db.query(WikiPage).filter(WikiPage.id == str(page_id), WikiPage.workspace_id == ws.id).first()
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
 
@@ -137,7 +139,7 @@ def delete_page(workspace_slug: str, page_id: UUID, user=Depends(get_current_use
 def list_versions(workspace_slug: str, page_id: UUID, user=Depends(get_current_user), db: Session = Depends(get_db)):
     ws = get_workspace_by_slug(workspace_slug, db)
     require_workspace_member(ws, user)
-    page = db.query(WikiPage).filter(WikiPage.id == page_id, WikiPage.workspace_id == ws.id).first()
+    page = db.query(WikiPage).filter(WikiPage.id == str(page_id), WikiPage.workspace_id == ws.id).first()
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
     return db.query(WikiPageVersion).filter(WikiPageVersion.page_id == page.id).order_by(WikiPageVersion.version_number.desc()).all()

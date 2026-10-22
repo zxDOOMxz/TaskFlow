@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { useAuthStore } from '@/stores/authStore'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
+import { NewWorkspacePage } from '@/pages/NewWorkspacePage'
 import { ProjectsPage } from '@/pages/ProjectsPage'
 import { ProjectBoardPage } from '@/pages/ProjectBoardPage'
 import { WikiPage } from '@/pages/WikiPage'
@@ -127,10 +128,17 @@ function RootRedirect() {
 }
 
 function App() {
-  console.log('[APP] App rendering')
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/workspaces/new"
+        element={
+          <ProtectedRoute>
+            <NewWorkspacePage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/w/:workspaceSlug/*"
         element={

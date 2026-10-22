@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase'
 import { User, Workspace } from '@/types'
 
 interface AuthState {
@@ -21,8 +20,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   setUser: (user) => set({ user, isAuthenticated: !!user }),
   setWorkspace: (workspace) => set({ workspace }),
   setLoading: (loading) => set({ isLoading: loading }),
+  // Чистит только локальное состояние. Вызывать supabase.auth.signOut() отсюда нельзя:
+  // logout используется внутри onAuthStateChange, а auth-методы Supabase внутри
+  // этого обработчика приводят к рекурсии/дедлоку (страница зависает).
   logout: async () => {
-    await supabase.auth.signOut()
     set({ user: null, workspace: null, isAuthenticated: false })
   },
 }))

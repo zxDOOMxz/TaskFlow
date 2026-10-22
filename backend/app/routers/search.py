@@ -32,12 +32,14 @@ def search(
     ws = get_workspace_by_slug(workspace_slug, db)
     require_workspace_member(ws, user)
 
-    query = q.strip()
+    query = q.strip()[:100]
     if len(query) < 2:
         return []
 
     results = []
-    like = f"%{query}%"
+    # Экранируем LIKE-wildcards, иначе "%" и "_" в запросе ломают поиск
+    escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    like = f"%{escaped}%"
 
     if not type_filter or type_filter == "issue":
         issues = (

@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     minio_secret_key: str = "minioadmin"
     minio_bucket: str = "taskflow"
 
+    # Максимальный размер загружаемого файла, МБ
+    max_upload_mb: int = 50
+
     # Web3Forms (https://web3forms.com/) for contact/invite forms without a backend SMTP server
     web3forms_access_key: str = ""
     web3forms_endpoint: str = "https://api.web3forms.com/submit"

@@ -59,4 +59,4 @@ class IssueMoveRequest(BaseModel):
     issue_id: UUID
     source_column_id: UUID
     target_column_id: UUID
-    new_position: int = 0
+    new_position: int = Field(0, ge=0)

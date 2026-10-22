@@ -17,6 +17,7 @@ export function FilesPage() {
   const { workspaceSlug } = useParams()
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!workspaceSlug) return
@@ -24,15 +25,20 @@ export function FilesPage() {
   }, [workspaceSlug])
 
   const loadFiles = () => {
-    filesApi.list(workspaceSlug!).then((res) => setFiles(res.data))
+    filesApi.list(workspaceSlug!).then((res) => setFiles(res.data)).catch((err) => {
+      setError(err.response?.data?.detail || 'Не удалось загрузить файлы')
+    })
   }
 
   const handleUpload = async (file: File) => {
     if (!workspaceSlug) return
     setUploading(true)
+    setError('')
     try {
       await filesApi.upload(workspaceSlug, file)
       loadFiles()
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Не удалось загрузить файл')
     } finally {
       setUploading(false)
     }
@@ -40,8 +46,12 @@ export function FilesPage() {
 
   const handleDelete = async (fileId: string) => {
     if (!workspaceSlug) return
-    await filesApi.delete(workspaceSlug, fileId)
-    loadFiles()
+    try {
+      await filesApi.delete(workspaceSlug, fileId)
+      loadFiles()
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Не удалось удалить файл')
+    }
   }
 
   return (
@@ -51,6 +61,7 @@ export function FilesPage() {
         <div className="max-w-4xl mx-auto space-y-6">
           <FileUploader onUpload={handleUpload} />
           {uploading && <p className="text-sm text-slate-500">Загрузка...</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
           <div className="card divide-y divide-slate-200">
             {files.length === 0 ? (

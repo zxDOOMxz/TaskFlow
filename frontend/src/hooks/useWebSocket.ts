@@ -29,6 +29,22 @@ export function useWebSocket({ roomId, token, onMessage, onConnect, onDisconnect
 
     let socket: WebSocket | null = null
     let cancelled = false
+    let retryTimer: ReturnType<typeof setTimeout> | null = null
+    let attempts = 0
+
+    const scheduleReconnect = () => {
+      if (cancelled) return
+      const delay = Math.min(15000, 1000 * 2 ** attempts)
+      attempts += 1
+      retryTimer = setTimeout(() => {
+        if (!cancelled) {
+          connect().catch((err) => {
+            console.error('WebSocket reconnect failed:', err)
+            scheduleReconnect()
+          })
+        }
+      }, delay)
+    }
 
     const connect = async () => {
       let accessToken = token
@@ -51,6 +67,7 @@ export function useWebSocket({ roomId, token, onMessage, onConnect, onDisconnect
 
       socket.onopen = () => {
         if (cancelled) return
+        attempts = 0
         setIsConnected(true)
         setError(null)
         onConnect?.()
@@ -60,6 +77,7 @@ export function useWebSocket({ roomId, token, onMessage, onConnect, onDisconnect
         if (cancelled) return
         setIsConnected(false)
         onDisconnect?.()
+        scheduleReconnect()
       }
 
       socket.onerror = () => {
@@ -85,6 +103,7 @@ export function useWebSocket({ roomId, token, onMessage, onConnect, onDisconnect
 
     return () => {
       cancelled = true
+      if (retryTimer) clearTimeout(retryTimer)
       socket?.close()
     }
   }, [roomId, token])

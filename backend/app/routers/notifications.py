@@ -30,7 +30,9 @@ def unread_count(user: User = Depends(get_current_user), db: Session = Depends(g
 
 @router.put("/{notification_id}/read")
 def mark_read(notification_id: UUID, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    n = db.query(Notification).filter(Notification.id == notification_id, Notification.user_id == user.id).first()
+    n = db.query(Notification).filter(
+        Notification.id == str(notification_id), Notification.user_id == user.id
+    ).first()
     if not n:
         raise HTTPException(status_code=404, detail="Notification not found")
     n.is_read = True

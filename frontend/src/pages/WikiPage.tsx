@@ -23,6 +23,8 @@ export function WikiPage() {
   const loadPages = () => {
     api.get(`/workspaces/${workspaceSlug}/wiki/pages`).then((res) => {
       setPages(res.data)
+    }).catch((err) => {
+      console.error('Failed to load wiki pages:', err)
     })
   }
 

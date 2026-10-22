@@ -20,13 +20,22 @@ export function ChatPanel({ workspaceSlug, roomId }: ChatPanelProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    let active = true
+    setMessages([])
     chatApi.listMessages(workspaceSlug, roomId).then((res) => {
-      setMessages(res.data.reverse())
+      if (active) setMessages(res.data.reverse())
+    }).catch((err) => {
+      console.error('Failed to load messages:', err)
     })
     chatApi.listRooms(workspaceSlug).then((res) => {
       const r = res.data.find((room) => room.id === roomId)
-      if (r) setRoom(r)
+      if (active && r) setRoom(r)
+    }).catch((err) => {
+      console.error('Failed to load rooms:', err)
     })
+    return () => {
+      active = false
+    }
   }, [workspaceSlug, roomId])
 
   useEffect(() => {

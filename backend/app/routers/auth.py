@@ -17,6 +17,7 @@ from app.schemas.auth import (
     UserCreate,
     UserLogin,
     UserRead,
+    UserUpdate,
 )
 from app.security import (
     create_access_token,
@@ -260,11 +261,9 @@ def me(user: User = Depends(get_current_user)):
 
 
 @router.put("/me", response_model=UserRead)
-def update_me(data: dict, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    allowed = {"first_name", "last_name", "timezone", "avatar_url"}
-    for key, value in data.items():
-        if key in allowed:
-            setattr(user, key, value)
+def update_me(data: UserUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(user, field, value)
     db.commit()
     db.refresh(user)
     return user
@@ -282,6 +281,6 @@ def change_password(data: PasswordChange, user: User = Depends(get_current_user)
 def store_refresh_token(db: Session, user_id: UUID, token: str):
     token_hash = hash_token(token)
     expires = datetime.now(timezone.utc) + timedelta(days=7)
-    rt = RefreshToken(user_id=user_id, token_hash=token_hash, expires_at=expires)
+    rt = RefreshToken(user_id=str(user_id), token_hash=token_hash, expires_at=expires)
     db.add(rt)
     db.commit()

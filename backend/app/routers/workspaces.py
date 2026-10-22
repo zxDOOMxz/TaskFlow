@@ -152,7 +152,9 @@ def update_member(
     if not is_workspace_admin(ws, user):
         raise HTTPException(status_code=403, detail="Admin required")
 
-    member = db.query(WorkspaceMember).filter(WorkspaceMember.id == member_id, WorkspaceMember.workspace_id == ws.id).first()
+    member = db.query(WorkspaceMember).filter(
+        WorkspaceMember.id == str(member_id), WorkspaceMember.workspace_id == ws.id
+    ).first()
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
 
@@ -173,7 +175,9 @@ def remove_member(
     if not is_workspace_admin(ws, user):
         raise HTTPException(status_code=403, detail="Admin required")
 
-    member = db.query(WorkspaceMember).filter(WorkspaceMember.id == member_id, WorkspaceMember.workspace_id == ws.id).first()
+    member = db.query(WorkspaceMember).filter(
+        WorkspaceMember.id == str(member_id), WorkspaceMember.workspace_id == ws.id
+    ).first()
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
 
